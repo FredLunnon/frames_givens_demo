@@ -1,0 +1,70 @@
+
+____________________________________________________________
+
+  Python/SymPy/GAlgebra program code for numerical frame transformation and 
+versor decomposition into fixed-axis (Givens') rotations, together with 
+demo & test harness, for real  n-space spherical geometry  Cl(n, 0, 0) .  
+
+  An earlier attempt to implement Givens' decomposition as a single GA 
+function has been abandoned as impracticably obscure and fragile. 
+There are now three major functions above the script fold, 
+    frame_transform(A, B), 
+    givens_factor_matrix(B),  
+    givens_factor_versor(Y),  
+each equipped with verbose option for demonstration and debugging.  
+givens_factor_versor() converts its input to a matrix, factorises that using givens_factor_matrix(), then converts the output matrices back to versors 
+using frame_transform().  It ain't pretty, but it works! 
+
+  The module is designed with portability and robustness in mind, rather than 
+optimal speed, memory or serpentine virtuosity.  Current documentation 
+remains regrettably scanty. [ Customary industrial-scale line-breaking conventions have been ignored: if something didn't fit on a single page, 
+I wouldn't make sense of it! ]  
+
+  This version performs reliably on numerical data, provided sign continuity 
+is not demanded (see below); left/right-hand or odd/even mismatches cause an 
+error message, then continuation with the partial result. 
+Round-off error is also monitored: numerical stability is excellent. 
+However, GAlgebra slows noticeably once dimension  n > 4 . 
+
+  Caution: within this module, matrices and versors compose LEFT-TO-RIGHT, 
+eg. 
+    matrix  K  acts on row vector  v  via  v <- v K ; 
+    versor  X  transforms  Z  via  Z <- (1/X) Z X ; 
+    transformation  X  followed by  Y  requires  X Y . 
+Use by an application with opposite conventions would require the user to 
+transpose / revert inputs and outputs, and reverse the order of compositions, 
+at the interface. [ It may be feasible to automate this pesky 4-way switch! ] 
+
+____________________________________________________________
+
+   Re computing versor  X  such that  (1/X) A X = B  for given orthonormal 
+versor frames  A,B  --- 
+On 6/4/16, Fred Lunnon <fred.lunnon@gmail.com> wrote:
+> ... 
+>   In connection with this project I also programmed "Rotor_from_frames",
+> in slightly simplified form.  As Lanco's version 3 stood, it executed the
+> main
+> loop  n-1  times, then forced the result to have even grade via an optional
+> reflection: this fails when initial and final frames have opposite senses.
+> Simply executing the loop  n  times yields the correct result.
+
+  Porting to Python and thorough testing for demonstration purposes 
+has exposed lamentable gaps in my grasp of the subtler issues involved.  
+Confusion can result from failing to recognise that the Clifford algebra 
+is a double cover of the matrix algebra; also that the correspondence between 
+frames and matrices differs from that between versors and matrices. 
+
+  In particular when  A,B  are right- and left-handed respectively, 
+_no_ previously proposed algorithm succeeds: the number of reflections is 
+odd, and  X~ A X = -B .  For odd  n  no solution is then possible; while 
+for even  n  solution  X  is computed as before but must then dualised. 
+
+  A separate unaddressed issue concerns ensuring continuity of  sign(X) , 
+bearing in mind that components are floating-point numbers subject to 
+roundoff error.  This defect might cause difficulties if the current 
+version were employed in an application involving (say) motion interpolation. 
+
+Fred Lunnon [11/06/16] 
+
+____________________________________________________________
+
