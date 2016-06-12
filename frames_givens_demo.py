@@ -3,7 +3,7 @@
 
 # Frame conversion and factoring into Givens' rotations for versors; 
 #   left-to-right composition. 
-# Version 1.1; date: 11/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 1.2; date: 12/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 # In command window execute: 
 #   python -i /Users/fred/fred/euclidean/frames_givens_demo.py 
 
@@ -46,7 +46,7 @@ def frame_transform (A, B, verb = False) :
       print k+1, sigk, cosin; print; print R; print; print C; print; # end if end for 
   
   # finally  C = (1/Z) A Z = +/-B , Z = prod_k R ; fix sign ( n  even) 
-  if sig < 0 and n%2 == 0 :  #  --- FAILS ?? 
+  if sig < 0 and n%2 == 0 : 
     Z = Z.dual(); sig = +1; # end if 
   err = 0;  # inspect roundoff error 
   for i in range(0, n) : 
