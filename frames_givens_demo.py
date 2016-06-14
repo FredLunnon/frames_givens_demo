@@ -3,7 +3,7 @@
 
 # Frame conversion and factoring into Givens' rotations for versors; 
 #   left-to-right composition. 
-# Version 1.2; date: 12/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 1.3; date: 14/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com>
 # In command window execute: 
 #   python -i /Users/fred/fred/euclidean/frames_givens_demo.py 
 
@@ -11,19 +11,20 @@ from sympy import *;
 from ga import *; 
 from copy import *;  # import copy;  # fails? 
 import random;  # from random import *;  # fails? 
+from mv import *;  # static GA wrappers
 
 # Normalise versor (magnitude assumed positive) : 
 #   version below fails to negotiate fl pt error? 
 # def normalise (X) : return X/X.norm() # end def 
 #   (symmetric) workaround below suffices for approximate versors! 
-def mag2 (X) : return sympify((X.rev()*X).grade(0)) # end def  # coerce! 
+def mag2 (X) : return sympify(grade((rev(X)*X), 0)) # end def  # coerce!
 
 def normalise (X) : return X/sqrt(mag2(X)) # end def 
 
 # Versor transforming orthonormal frame A to B , 
 #   with optional verbosity; L-to-R composition, frame length = n 
 def frame_transform (A, B, verb = False) : 
-  # local lip, sig, sigk, k, i, n, r, C, Z, R, R2, cosin; # global GA, n, eps; 
+  # local lip, sig, sigk, k, i, n, r, C, Z, R, R2, cosin;  # global GA, n, eps;
   if verb : print; print "frame_transform: A, B"; print A; print; print B; print;  # end if 
   lip = 0.7;  # angle borderline: |lip| < 1 , here  cos pi/8 
   C = deepcopy(A); Z = GA.mv(1);  # initially  C = A , Z = 1 
@@ -32,7 +33,7 @@ def frame_transform (A, B, verb = False) :
   
   sig = +1;  # main loop  
   for k in range(0, n) : 
-    R2 = C[k]*B[k]; cosin = sympify(R2.grade(0));  # coerce! 
+    R2 = C[k]*B[k]; cosin = sympify(grade(R2, 0));  # coerce!
     if cosin > lip :  # inspect angle 
       R = normalise(1 + R2);  # rotate 
       sigk = +1; 
@@ -40,17 +41,17 @@ def frame_transform (A, B, verb = False) :
       R = normalise(B[k] - C[k]);  # reflect 
       sigk = -1;  # end if 
     for i in range(k, n) :  # partially transform C 
-      C[i] = sigk*(R.rev()*C[i]*R).grade(1); # end for 
+      C[i] = sigk*grade(rev(R)*C[i]*R, 1); # end for
     Z = Z*R; sig = sig*sigk; 
     if verb : 
       print k+1, sigk, cosin; print; print R; print; print C; print; # end if end for 
   
   # finally  C = (1/Z) A Z = +/-B , Z = prod_k R ; fix sign ( n  even) 
   if sig < 0 and n%2 == 0 : 
-    Z = Z.dual(); sig = +1; # end if 
+    Z = dual(Z); sig = +1; # end if
   err = 0;  # inspect roundoff error 
   for i in range(0, n) : 
-    err = err + mag2( B[i].rev() * (Z.rev()*A[i]*Z) - sig )/2;  # end for  
+    err = err + mag2( rev(B[i]) * (rev(Z)*A[i]*Z) - sig )/2;  # end for
   err = sqrt(err/n); 
   if err > eps : 
     print "frame_transform: error = ", err; print; 
@@ -76,7 +77,7 @@ def matrix_to_versor (A) : # local i; global n, gene;
 # Convert versor to matrix: rotation angles doubled 
 #   L-to-R versors, L-to-R matrices 
 def versor_to_matrix (X) :  # local i, j; global n, gene; 
-  return Matrix([ [ (X.rev()*gene[j]*X*gene[i]).grade(0) 
+  return Matrix([ [ grade(rev(X)*gene[j]*X*gene[i], 0)
     for j in range(0, n) ] for i in range(0, n) ]).T # end def 
 
 # Build Givens' rotation in  ij-plane with cos(u) and sin(u) 
@@ -93,7 +94,7 @@ def givens_factor_matrix (B, verb = False) :
   if verb : print; print "givens_factor_matrix: B"; print B; print;  # end if 
   U = Matrix([ [ 1-abs(sign(i-j)) 
     for j in range(0, n) ] for i in range(0, n) ]);  # unit matrix 
-  ij_k = [ [i, j] for i in range(0, n) for j in range(0, i)]; # schedule 
+  ij_k = [ [i, j] for i in range(0, n) for j in range(0, i)];  # schedule
   
   A = B.T; C = deepcopy(U);  # initially  A = B^T , C = 1 
   R = [ U for i in range(0, m) ];  # rotation factors 
@@ -105,8 +106,8 @@ def givens_factor_matrix (B, verb = False) :
     # Givens' rotation clearing matrix coefficient  [i, j]  from  A : 
     #   t/r, s/r = cos u, sin u ; 
     s = A[j, i]; t = A[j, j]; r = sqrt(s**2 + t**2); 
-    R[k] = given(j, i, t/r, s/r); # t,s = cos,sin(angle) 
-    A = A*R[k]; C = C*R[k]; # new A_ij ~ 0 
+    R[k] = given(j, i, t/r, s/r);  # t,s = cos,sin(angle)
+    A = A*R[k]; C = C*R[k];  # new A_ij ~ 0
     if verb : 
       print k+1, i+1, j+1, t, s, r; print; print R[k]; print; print A; print; # end if end for 
   Z = B.T*C  # finally  A ~ diag(1, ..., 1, +/-1) ,  C ~ B  (if special) 
@@ -131,15 +132,14 @@ def givens_factor_versor (Y, verb = False) :
   Rmat = givens_factor_matrix(B); 
   Rmul = [ matrix_to_versor(Rmat[k]) for k in range(0, m) ]  
   
-  Z = Y.rev();  # (1/Y) R_1 ... R_m  ~  +/-M , monomial 
+  Z = rev(Y);  # (1/Y) R_1 ... R_m  ~  +/-M , monomial
   for k in range(0, m) : 
     Z = Z*Rmul[k];  # end for  
-  if Z.grade(0) <> 0 : M = GA.mv(1).rev();  # expected monomial: grade even 
-  elif n%2 <> 0 : M = GA.mv(1).dual().rev();  # grade odd, n odd 
-  else : M = gene[n-1].dual().rev();  # end if  # grade odd, n even 
-  sig = (M*Z).grade(0); # correct for spin continuity 
-  Rmul[m-1] = sig*Rmul[m-1];  
-  err = sqrt(mag2(sig*Z - M.rev())/2); 
+  if grade(Z, 0) <> 0 : M = rev(GA.mv(1));  # expected monomial: grade even
+  elif n%2 <> 0 : M = rev(dual(GA.mv(1)));  # grade odd, n odd
+  else : M = rev(dual(gene[n-1]));  # end if  # grade odd, n even
+  sig = grade(M*Z, 0); Rmul[m-1] = sig*Rmul[m-1];  # adjust spin
+  err = sqrt(mag2(sig*Z - rev(M))/2);
   if err > eps : print "givens_factor: error = ", err; print;  # end if 
   if M <> 1 : print "givens_factor: monomial = ", M; print;  # end if 
   
@@ -150,12 +150,11 @@ def givens_factor_versor (Y, verb = False) :
 
 ################################################################################
 
-# Random real, length-n  vector, grade-k  versor, orthonormal matrix; 
-#   component range (-1..+1) ; generator reciprocal precision ~ 10^16 
+# Random real: component range (-1..+1) ; generator precision ~ 10E-16 
 def rand_unit () : 
   return random.uniform(-1, +1); # end def 
 
-# random normalised vector qua row matrix 
+# Random normalised row vector 
 def rand_vector () :  # local j, ranlis, mag; global n; 
   ranlis = [ rand_unit() for j in range(0, n) ]; 
   mag = 0; 
@@ -164,7 +163,7 @@ def rand_vector () :  # local j, ranlis, mag; global n;
   mag = sqrt(mag); 
   return Matrix([ [ ranlis[j]/mag for j in range(0, n) ] ]); # end def 
 
-# random normalised versor product of  k  random vectors 
+# Random normalised versor product of  k  random vectors 
 def rand_versor (k) : 
   # local R, i; global n; 
   R = 1; 
@@ -190,9 +189,9 @@ def rand_ortho (l) :
 
 # Instantiate spherical algebra --- no default identifiers? 
 gene = [];  # global generators 
-n = 0; m = 0; # vector & bivector dimension: read-only! 
-def instantiate_GA (n0) : # local n, m; global gene; 
-  n = n0; m = n*(n-1)/2; # cannot assign global  n,m ? 
+n = 0; m = 0;  # vector & bivector dimension: read-only!
+def instantiate_GA (n0) :  # local n, m; global gene;
+  n = n0; m = n*(n-1)/2;  # cannot assign global  n,m ?
   while len(gene) > 0 : gene.pop();  # delete generators 
   
   if n == 2 : 
@@ -241,14 +240,14 @@ def test_main () :
   R = givens_factor_matrix(B, True); 
   
   # Target  Y  random versor 
-  Y = rand_versor(2*n); # direct 
+  Y = rand_versor(2*n);  # direct
   R = givens_factor_versor(Y, True); 
   Y = rand_versor(2*n+1);  # reflective 
   R = givens_factor_versor(Y, True); 
   
   return "DONE"; # end def 
 
-eps = 1.0e-12; # acceptable error using double-length floating-point 
+eps = 1.0e-12;  # acceptable error using double-length floating-point
 (GA, n, m) = instantiate_GA(4);  # user select geometry 
 print(test_main());  # run demos 
 
@@ -256,9 +255,9 @@ print(test_main());  # run demos
 
 # TODO --- 
 # Detailed specs !! 
-# frame_transform () : ensure continuity of  sign(Z)  ?? 
-# test_main () : demo versor -> matrix homomorphism; demo spin ?? 
-# Wrap non-static properties: matrix.T , multor.rev() , unit matrix etc ?? 
+# frame_transform () : document non-continuity of  sign(Z)  ??
+# test_main () : demo versor -> matrix homomorphism & spin ambiguity ?? 
+# Wrap non-static properties: matrix.T , .row,  list.append; unit matrix, etc ??
 # Tidy identifiers: matrix  Xm  etc, versor  Xv , frame  Xs , etc? 	?? 
 #   Or  matrix & vector  A, B, C, ... ; versor & vector  ..., X, Y, Z . 
 
