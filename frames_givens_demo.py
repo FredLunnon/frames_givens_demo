@@ -17,7 +17,7 @@ from mv import *;  # static GA wrappers
 #   version below fails to negotiate fl pt error? 
 # def normalise (X) : return X/X.norm() # end def 
 #   (symmetric) workaround below suffices for approximate versors! 
-def mag2 (X) : return sympify(grade((rev(X)*X), 0)) # end def  # coerce! 
+def mag2 (X) : return sympify(grade((rev(GA.mv(X))*X), 0)) # end def  # coerce! 
 
 def normalise (X) : return X/sqrt(mag2(X)) # end def 
 
@@ -63,9 +63,12 @@ def frame_transform (A, B, verb = False, Z_pre = 0) :
     print "frame_transform: error = ", err; print; # end if 
   
   if Z_pre <> 0 :  # ensure  sign(Z)  continuous 
-    spi = round(sympify(grade(rev(GA.mv(Z_pre))*Z, 0)));  # coerce! 
-    if abs(spi) <> 1 : 
-      print "frame_transform: spin = ", spi; print; 
+    Z_Z = Z_pre*rev(Z);  # (old Z)/(new Z) ~ spi  (monomial) 
+    spi = GA.mv(round(sympify(grade(Z_Z, 0))));  # coerce! 
+    if spi == 0 and n%2 == 1 : 
+      spi = rev(dual(GA.mv(round(sympify(grade(dual(Z_Z), 0))))));  # coerce! 
+    if mag2(spi) <> 1 : 
+      print "frame_transform: pseudo-spin = ", spi; print; 
     else : Z = spi*Z; # end if end if 
   
   if verb : print "B, C, Z"; print B; print; print C; print; print Z; print; print "sig, err", sig, err; print; # end if 
@@ -279,7 +282,7 @@ def spin_disc (l) :  # local pifle, R, R_k, X; global gene;
   A = versor_to_matrix(R); 
   R_2 = matrix_to_versor(A*A, 1); # as for  k = 2 
   R_22 = matrix_to_versor(A*A, -1); # as for  k = l+2 
-  print "A, R_2, R_(l+2)"; print; print A; print R_2; print R_22; print; 
+  print "A, R_2, R_(l+2)"; print; print A; print; print R_2; print R_22; print; 
   
   return "DONE"; # end def 
 
