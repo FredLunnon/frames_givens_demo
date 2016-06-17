@@ -1,9 +1,10 @@
 
 ################################################################################
 
-# Frame conversion and factoring into Givens' rotations for versors; 
-#   left-to-right composition. 
-# Version 1.4; date: 14/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+#   Python/SymPy/GAlgebra program source code for numerical frame transformation 
+# and versor decomposition into fixed-axis (Givens') rotations, together with 
+# demo & test harness, for real  n-space spherical geometry  Cl(n, 0, 0) .  
+# Version 1.5; date: 17/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 # In command window execute: 
 #   python -i /Users/fred/Desktop/frames_givens_demo/frames_givens_demo.py 
 
@@ -22,71 +23,76 @@ def mag2 (X) : return sympify(grade((rev(GA.mv(X))*X), 0)) # end def  # coerce!
 def normalise (X) : return X/sqrt(mag2(X)) # end def 
 
 
-# Versor transforming orthonormal frame A to B , 
+# Matrix transforming orthonormal frame  A  to  B  (just my little joke!), 
+#   L-to-R composition, frame length = n  
+def frame_transform_matrix (F, G) :  # global n; 
+    return F.T*G; # end def 
+
+# Versor transforming orthonormal frame F to G , 
 #   L-to-R composition, frame length = n ; optional verbosity; 
 #   optional spin continuity with previous result 
-def frame_transform (A, B, verb = False, Z_pre = 0) : 
-  # local lip, sig, sigk, spi, k, i, n, r, C, Z, R, R2, cosin;  # global GA, n, eps; 
-  if verb : print; print "frame_transform: A, B"; print A; print; print B; print;  # end if 
-  lip = 0.7;  # angle borderline: |lip| < 1 , here  cos pi/8 
-  C = deepcopy(A); Z = GA.mv(1);  # initially  C = A , Z = 1 
+def frame_transform_versor (F, G, verb = False, Z0 = 0) : 
+  # local lip, sig, sigk, disc, k, i, n, r, H, Z, R, R2, cosin;  # global GA, n, eps; 
+  if verb : print; print "frame_transform_versor: F, G"; print F; print; print G; print;  # end if 
+  lip = 0.7;  # angle threshold:  |lip| < 1 , here  cos pi/8 
+  H = deepcopy(F); Z = GA.mv(1);  # initially  H = F , Z = 1 
   if verb : 
-    print "k, sigk, cosin, R, C"; print; # end if 
+    print "k, sigk, cosin, R, H"; print; # end if 
   
   sig = +1;  # main loop 
   for k in range(0, n) : 
-    R2 = C[k]*B[k]; cosin = sympify(grade(R2, 0));  # coerce! 
-    if cosin > lip :  # inspect angle 
+    R2 = H[k]*G[k]; cosin = sympify(grade(R2, 0));  # coerce! 
+    if cosin >= lip :  # angle below threshold? 
       R = normalise(1 + R2);  # rotate 
       sigk = +1; 
     else : 
-      R = normalise(B[k] - C[k]);  # reflect 
-      sigk = -1;  # end if 
-    for i in range(k, n) :  # partially transform C 
-      C[i] = sigk*grade(rev(R)*C[i]*R, 1); # end for 
+      R = normalise(G[k] - H[k]);  # reflect 
+      sigk = -1; # end if 
+    for i in range(k, n) :  # partially transform H 
+      H[i] = sigk*grade(rev(R)*H[i]*R, 1); # end for 
     Z = Z*R; sig = sig*sigk; 
     if verb : 
-      print k+1, sigk, cosin; print; print R; print; print C; print; # end if end for 
-  # finally  C = (1/Z) A Z ~ +/-B , Z = prod_k R ; 
+      print k+1, sigk, cosin; print; print R; print; print H; print; # end if end for 
+  # finally  H = (1/Z) F Z ~ +/-G , Z = prod_k R ; 
   
   # correct  sign(C) , provided  n  even! 
   if sig < 0 and n%2 == 0 : 
     Z = dual(Z); sig = +1; # end if 
   if sig < 0 : 
-    print "frame_transform: sign = ", sig; print; # end if 
+    print "frame_transform_versor: sign = ", sig; print; # end if 
   
-  err = 0;  # inspect roundoff error 
+  if Z0 <> 0 :  # ensure  sign(Z)  continuous 
+    Z_Z = Z0*rev(Z);  # (old Z)/(new Z) ~ disc  (monomial) 
+    disc = GA.mv(round(sympify(grade(Z_Z, 0))));  # coerce! 
+    if disc == 0 and n%2 == 1 : 
+      disc = rev(dual(GA.mv(round(sympify(grade(dual(Z_Z), 0))))));  # coerce! 
+    if mag2(disc) <> 1 : 
+      print "frame_transform_versor: discontinuity = ", disc; print; 
+    else : Z = disc*Z; # end if end if 
+  
+  err = 0;  # roundoff error 
   for i in range(0, n) : 
-    err = err + mag2( rev(B[i]) * (rev(Z)*A[i]*Z) - sig )/2;  # end for 
+    err = err + mag2( rev(G[i]) * (rev(Z)*F[i]*Z) - sig )/2; # end for 
   err = sqrt(err/n); 
   if err > eps : 
-    print "frame_transform: error = ", err; print; # end if 
+    print "frame_transform_versor: error = ", err; print; # end if 
   
-  if Z_pre <> 0 :  # ensure  sign(Z)  continuous 
-    Z_Z = Z_pre*rev(Z);  # (old Z)/(new Z) ~ spi  (monomial) 
-    spi = GA.mv(round(sympify(grade(Z_Z, 0))));  # coerce! 
-    if spi == 0 and n%2 == 1 : 
-      spi = rev(dual(GA.mv(round(sympify(grade(dual(Z_Z), 0))))));  # coerce! 
-    if mag2(spi) <> 1 : 
-      print "frame_transform: pseudo-spin = ", spi; print; 
-    else : Z = spi*Z; # end if end if 
-  
-  if verb : print "B, C, Z"; print B; print; print C; print; print Z; print; print "sig, err", sig, err; print; # end if 
+  if verb : print "G, H, Z"; print G; print; print H; print; print Z; print; print "sig, err", sig, err; print; # end if 
   return Z; # end def 
 
 # Convert vector to versor 
 def vector_to_versor (V) : # local j, W; global n, gene; 
   W = 0; 
   for j in range(0, n) : 
-    W = W + V[j]*gene[j];  # end for 
+    W = W + V[j]*gene[j]; # end for 
   return W; # end def 
 
-# Convert matrix to versor: rotation angles halved; calls frame_transform() ! 
+# Convert matrix to versor: rotation angles halved; calls frame_transform_versor() ! 
 #   L-to-R versors, L-to-R matrices; optional spin continuity 
-def matrix_to_versor (A, Z_pre = 0) : # local i; global n, gene; 
-  return frame_transform(gene, 
+def matrix_to_versor (A, Z0 = 0) : # local i; global n, gene; 
+  return frame_transform_versor(gene, 
     [ vector_to_versor(A.row(i)) for i in range(0, n) ], 
-    False, Z_pre); # end def 
+    False, Z0); # end def 
 
 # Convert versor to matrix: rotation angles doubled 
 #   L-to-R versors, L-to-R matrices 
@@ -95,71 +101,71 @@ def versor_to_matrix (X) :  # local i, j; global n, gene;
     for j in range(0, n) ] for i in range(0, n) ]).T # end def 
 
 # Build Givens' rotation in  ij-plane with cos(u) and sin(u) 
-def given(p, q, cu, su) :  # local i, j, R; global n; 
+def givens(p, q, cu, su) :  # local i, j, R; global n; 
   R = [ [ 1-abs(sign(i-j)) 
     for j in range(0, n) ] for i in range(0, n) ];  # unit matrix 
   R[p][p] = cu; R[q][q] = cu; R[p][q] = -su; R[q][p] = su; 
   return Matrix(R); # end def 
 
-# Factorise matrix into Givens' rotations  B = R_1 ... R_m , 
+# Factorise matrix into Givens' rotations  B = +/- R_1 ... R_m , 
 #   with optional verbosity; L-to-R matrices 
 def givens_factor_matrix (B, verb = False) : 
   #local A, B, C, R, i, j, k, r, s, t, err; global n, m, eps; 
-  if verb : print; print "givens_factor_matrix: B"; print B; print;  # end if 
+  if verb : print; print "givens_factor_matrix: B"; print B; print; # end if 
   U = Matrix([ [ 1-abs(sign(i-j)) 
     for j in range(0, n) ] for i in range(0, n) ]);  # unit matrix 
   ij_k = [ [i, j] for i in range(0, n) for j in range(0, i)];  # schedule 
   
   A = B.T; C = deepcopy(U);  # initially  A = B^T , C = 1 
   R = [ U for i in range(0, m) ];  # rotation factors 
+  k = -1;  # move counter 
   if verb : 
-    print "k, i, j, t, s, r, R, A"; print;  # end if 
+    print "k, i, j, t, s, r, R, A"; print; # end if 
   
-  for k in range(0, m) :  # main loop 
-    i = ij_k[k][0]; j = ij_k[k][1];  # next move 
-    # Givens' rotation clearing matrix coefficient  [i, j]  from  A : 
-    #   t/r, s/r = cos u, sin u ; 
-    s = A[j, i]; t = A[j, j]; r = sqrt(s**2 + t**2); 
-    R[k] = given(j, i, t/r, s/r);  # t,s = cos,sin(angle) 
-    A = A*R[k]; C = C*R[k];  # new A_ij ~ 0 
-    if verb : 
-      print k+1, i+1, j+1, t, s, r; print; print R[k]; print; print A; print; # end if end for 
-  Z = B.T*C  # finally  A ~ diag(1, ..., 1, +/-1) ,  C ~ B  (if special) 
+  for j in range(0, n) : 
+    for i in range(0, j) :  # main loop 
+      k = k+1;  # next move 
+      s = A[i, j]; t = A[i, i]; r = sqrt(s**2 + t**2); 
+      R[k] = givens(i, j, t/r, s/r);  # t/r, s/r = cos(u), sin(u) 
+      A = A*R[k]; C = C*R[k];  # new A_ij ~ 0 , A_jj > 0 
+      if verb : 
+        print k+1, i+1, j+1, t, s, r; print; print R[k]; print; print A; print; 
+      # end if end for end for 
+  # finally  A ~ B^T R[1] ... R[m] ~ diag(1, ..., 1, +/-1) 
   
-  # B^T R[1] ... R[m] ~ I, diag(1, ..., 1, -1)  for special, reflecting resp. 
-  err = 0;  
+  Z = B.T*C;  err = 0;  # roundoff error 
   for i in range(0, n) : 
     for j in range(0, n) : 
-      err = err + (abs(Z[i, j]) - U[i, j])**2;  # end for end for 
+      err = err + (abs(Z[i, j]) - U[i, j])**2; # end for end for 
   err = sqrt(err/n); 
-  if err > eps : print "givens_factor: error = ", err; print;  # end if 
-
-  if verb : print "B^T R[1] ... R[m]"; print Z; print; print "err", err; print;  # end if 
+  if err > eps : print "givens_factor_matrix: error = ", err; print; # end if 
+  
+  if verb : print "B^T R[1] ... R[m]"; print Z; print; print "err", err; print; # end if 
   return R; # end def 
 
 # Factorise versor into Givens' rotations: L-to-R composition; 
 #   calls givens_factor_matrix();  Y = R_1 ... R_m M 
 def givens_factor_versor (Y, verb = False) : 
   # local k, B, Z, M, Rmul, Rmat; global n, m, gene, GA; 
-  if verb : print; print "givens_factor_versor: Y"; print Y; print;  # end if 
+  if verb : print; print "givens_factor_versor: Y"; print Y; print; # end if 
   B = versor_to_matrix(Y); 
   Rmat = givens_factor_matrix(B); 
   Rmul = [ matrix_to_versor(Rmat[k]) for k in range(0, m) ] 
   
   Z = rev(Y);  # (1/Y) R_1 ... R_m  ~  +/-M , monomial 
   for k in range(0, m) : 
-    Z = Z*Rmul[k];  # end for 
+    Z = Z*Rmul[k]; # end for 
   if grade(Z, 0) <> 0 : M = rev(GA.mv(1));  # expected monomial: grade even 
   elif n%2 <> 0 : M = rev(dual(GA.mv(1)));  # grade odd, n odd 
-  else : M = rev(dual(gene[n-1]));  # end if  # grade odd, n even 
+  else : M = rev(dual(gene[n-1])); # end if  # grade odd, n even 
   sig = grade(M*Z, 0); Rmul[m-1] = sig*Rmul[m-1];  # adjust spin 
   err = sqrt(mag2(sig*Z - rev(M))/2); 
-  if err > eps : print "givens_factor: error = ", err; print;  # end if 
-  if M <> 1 : print "givens_factor: monomial = ", M; print;  # end if 
+  if err > eps : print "givens_factor_versor: error = ", err; print; # end if 
+  if M <> 1 : print "givens_factor_versor: monomial = ", M; print; # end if 
   
   if verb : 
     print "R_1, ..., R_m"; print Rmul; print; 
-    print "(1/Y) R_1 ... R_m, M"; print Z; print M; print; print "sig, err ", sig, err; print;  # end if 
+    print "(1/Y) R_1 ... R_m, M"; print Z; print M; print; print "sig, err ", sig, err; print; # end if 
   return Rmul; # end def 
 
 ################################################################################
@@ -173,7 +179,7 @@ def rand_vector () :  # local j, ranlis, mag; global n;
   ranlis = [ rand_unit() for j in range(0, n) ]; 
   mag = 0; 
   for j in range(0, n) : 
-    mag = mag + ranlis[j]**2;  # end for 
+    mag = mag + ranlis[j]**2; # end for 
   mag = sqrt(mag); 
   return Matrix([ [ ranlis[j]/mag for j in range(0, n) ] ]); # end def 
 
@@ -182,7 +188,7 @@ def rand_versor (k) :
   # local R, i; global n; 
   R = 1; 
   for i in range(0, k) : 
-    R = R * vector_to_versor(rand_vector());  # end for 
+    R = R * vector_to_versor(rand_vector()); # end for 
   return R; # end def 
 
 # Random orthonormal matrix product of  l  reflections 
@@ -201,7 +207,7 @@ def rand_ortho (l) :
     A = R*A;  # end for 
   return A; # end def 
 
-# Instantiate spherical algebra --- no default identifiers? 
+# Instantiate spherical algebra: call at top level; no default identifiers? 
 gene = [];  # global generators 
 n = 0; m = 0;  # vector & bivector dimension: read-only! 
 def instantiate_GA (n0) :  # local n, m; global gene; 
@@ -232,20 +238,22 @@ def instantiate_GA (n0) :  # local n, m; global gene;
     print; print "You're on your own, sunshine!  n = ", n; print; # end if 
   return (GA, n, m); # end def 
 
-# Test suite 
+# Verbose test suite 
 def test_main () : 
+  # local Amat, A, Bmat, B, Z, R, Y; global n; 
+  print; print "test_main(): verbose tests"; 
   
   # Source and target frames  A,B  via random orthonormal matrices 
   Amat = rand_ortho(2*n);  # right-handed to right-handed 
   A = [ vector_to_versor(Amat.row(i)) for  i in range(0, n) ]; 
   Bmat = rand_ortho(2*n); 
   B = [ vector_to_versor(Bmat.row(i)) for  i in range(0, n) ]; 
-  Z = frame_transform(A, B, True); 
+  Z = frame_transform_versor(A, B, True); 
   Amat = rand_ortho(2*n);  # right-handed to left-handed 
   A = [ vector_to_versor(Amat.row(i)) for  i in range(0, n) ]; 
   Bmat = rand_ortho(2*n+1); 
   B = [ vector_to_versor(Bmat.row(i)) for  i in range(0, n) ]; 
-  Z = frame_transform(A, B, True); 
+  Z = frame_transform_versor(A, B, True); 
   
   # Target  B  random orthonormal matrix 
   B = rand_ortho(2*n);  # direct 
@@ -263,8 +271,10 @@ def test_main () :
 
 # Demo with  n = 2  set globally: versor spin; 
 #   versor -> matrix homomorphism; spin continuity 
-def spin_disc (l) :  # local pifle, R, R_k, X; global gene; 
-  (e1, e2) = gene; 
+def spin_disc (l = 20) : 
+  # local k, pifle, R, R_k, X, A, R_1, R_11, R_2, R_22; global gene; 
+  (e1, e2) = gene;  # generator identifiers 
+  print; print "spin_disc(): demos, l = ", l; print; 
   
   # ambiguous sign of versor, due to double cover of continuous rotation: 
   #   after  l  steps,  X_l ~ X_0  but  R_l ~ -R_0 ~ -1 ; 
@@ -280,23 +290,23 @@ def spin_disc (l) :  # local pifle, R, R_k, X; global gene;
   # spin continuity enforced during matrix conversion to versor; 
   #   unidirectional versor product mapping to matrix product 
   A = versor_to_matrix(R); 
-  R_2 = matrix_to_versor(A*A, 1); # as for  k = 2 
-  R_22 = matrix_to_versor(A*A, -1); # as for  k = l+2 
-  print "A, R_2, R_(l+2)"; print; print A; print; print R_2; print R_22; print; 
+  R_1 = matrix_to_versor(A, 1); # as  k = 1 
+  R_11 = matrix_to_versor(A, -1); # as  k = l+1 
+  R_2 = matrix_to_versor(A*A, R_1); # as  k = 2 
+  R_22 = matrix_to_versor(A*A, R_11); # as  k = l+2 
+  print "A, R_1, R_(l+1), R_2, R_(l+2)"; print; print A; print; print R_1; print R_11; print R_2; print R_22; print; 
   
   return "DONE"; # end def 
 
 eps = 1.0e-12;  # rounding error bound (double-length floating-point) 
-(GA, n, m) = instantiate_GA(4);  # user select geometry 
+(GA, n, m) = instantiate_GA(4);  # user-selected geometry dimension 
 print test_main();  # verbose tests 
-(GA, n, m) = instantiate_GA(2);  # select geometry plane 
-print spin_disc(20); # demo spin etc 
+(GA, n, m) = instantiate_GA(2);  # select plane geometry 
+print spin_disc(); # spin demo 
 
 ################################################################################
 
 # TODO --- 
-# Detailed specs; document algorithms; spin & sign continuity ?? 
 # Wrap non-static properties: matrix.T , .row,  list.append; unit matrix, etc ?? 
-# Tidy identifiers: matrix  Xm  etc, versor  Xv , frame  Xs , etc? 	?? 
-#   Or  matrix & vector  A, B, C, ... ; versor & vector  ..., X, Y, Z . 
+# spin_disc() : demo dual continuity ?? 
 
