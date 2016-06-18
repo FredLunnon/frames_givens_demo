@@ -4,7 +4,7 @@
 #   Python/SymPy/GAlgebra program source code for numerical frame transformation 
 # and versor decomposition into fixed-axis (Givens') rotations, together with 
 # demo & test harness, for real  n-space spherical geometry  Cl(n, 0, 0) .  
-# Version 1.5; date: 17/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 1.6; date: 18/06/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 # In command window execute: 
 #   python -i /Users/fred/Desktop/frames_givens_demo/frames_givens_demo.py 
 
@@ -32,7 +32,8 @@ def frame_transform_matrix (F, G) :  # global n;
 #   L-to-R composition, frame length = n ; optional verbosity; 
 #   optional spin continuity with previous result 
 def frame_transform_versor (F, G, verb = False, Z0 = 0) : 
-  # local lip, sig, sigk, disc, k, i, n, r, H, Z, R, R2, cosin;  # global GA, n, eps; 
+  # local lip, sig, sigk, disc, k, i, n, r, H, Z, R, R2, cosin, err;  
+  # global GA, n, eps; 
   if verb : print; print "frame_transform_versor: F, G"; print F; print; print G; print;  # end if 
   lip = 0.7;  # angle threshold:  |lip| < 1 , here  cos pi/8 
   H = deepcopy(F); Z = GA.mv(1);  # initially  H = F , Z = 1 
@@ -144,24 +145,22 @@ def givens_factor_matrix (B, verb = False) :
   return R; # end def 
 
 # Factorise versor into Givens' rotations: L-to-R composition; 
-#   calls givens_factor_matrix();  Y = R_1 ... R_m M 
+#   calls givens_factor_matrix();  Y = R_1 ... R_m (e_1 if odd)  
 def givens_factor_versor (Y, verb = False) : 
-  # local k, B, Z, M, Rmul, Rmat; global n, m, gene, GA; 
+  # local k, B, Z, M, Rmul, Rmat, sig, err; global n, m, gene, GA; 
   if verb : print; print "givens_factor_versor: Y"; print Y; print; # end if 
-  B = versor_to_matrix(Y); 
+  if grade(Y, 0) <> 0 : M = 1;  # even grade 
+  else : M = gene[0];  # odd grade 
+  B = versor_to_matrix(Y*M);  
   Rmat = givens_factor_matrix(B); 
   Rmul = [ matrix_to_versor(Rmat[k]) for k in range(0, m) ] 
   
-  Z = rev(Y);  # (1/Y) R_1 ... R_m  ~  +/-M , monomial 
+  Z = rev(Y*M);  # 1/(Y M) R_1 ... R_m  ~  1 ,  M in {1, e1} 
   for k in range(0, m) : 
     Z = Z*Rmul[k]; # end for 
-  if grade(Z, 0) <> 0 : M = rev(GA.mv(1));  # expected monomial: grade even 
-  elif n%2 <> 0 : M = rev(dual(GA.mv(1)));  # grade odd, n odd 
-  else : M = rev(dual(gene[n-1])); # end if  # grade odd, n even 
-  sig = grade(M*Z, 0); Rmul[m-1] = sig*Rmul[m-1];  # adjust spin 
-  err = sqrt(mag2(sig*Z - rev(M))/2); 
+  sig = grade(Z, 0); Rmul[m-1] = sig*Rmul[m-1];  # adjust spin 
+  err = sqrt(mag2(Z - sig)/2); 
   if err > eps : print "givens_factor_versor: error = ", err; print; # end if 
-  if M <> 1 : print "givens_factor_versor: monomial = ", M; print; # end if 
   
   if verb : 
     print "R_1, ..., R_m"; print Rmul; print; 

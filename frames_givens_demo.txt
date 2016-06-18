@@ -168,19 +168,14 @@ otherwise  R_1 .. R_m = -B .
 invokes verbosity. 
 
   Output:  Sequence of grade-2 Givens'  R_k  such that  Y = R_1 .. R_m M , 
-where  m = n(n-1)/2 , and  M  is monomial.  An error message (or two) results 
+where  m = n(n-1)/2 , and  M = 1 or e_1 .  An error message (or two) results 
 if output rounding error exceeds global bound  eps . 
 
-  Method:  Y  is converted to matrix for  givens_factor_matrix()  to process, 
-and the result converted back via  matrix_to_versor() .  Then the trouble 
-starts ... 
+  Method:  Y  is made even-grade by multiplication by  e_1  if necessary, 
+converted to matrix for  givens_factor_matrix()  to process, the result converted back via  matrix_to_versor() .  
 
   Sign issues:  When  Y  has even grade, the product may fail to have the same 
-sign as  Y , and the sign of  R_m  is adjusted to correct this.  Otherwise, 
-factorisation is only possible up to an extra monomial  M  --- the dual of 
-either  e_n  or  1  for  n  even or odd resp. ---  which is printed with an 
-error message.  [ Ideally the algorithm should ensure that  M = e_n ; 
-however, it is not at present clear how to achieve this. ] 
+sign as  Y , and the sign of  R_m  is adjusted to correct this.  
 
 
   Specification:  instantiate_GA (n)  
