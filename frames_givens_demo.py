@@ -300,7 +300,8 @@ def spin_disc (l = 20) :
   
   return "DONE"; # end def 
 
-(GA, n, p, q, r, m) = instantiate_GA(2, 2, 2);  # mixed degenerate algebra 
+# (GA, n, p, q, r, m) = instantiate_GA(2, 2, 2);  # mixed degenerate algebra 
+# print test_main();  # verbose tests 
 (GA, n, p, q, r, m) = instantiate_GA(4, 0, 0);  # 3-sphere geometry 
 print test_main();  # verbose tests 
 (GA, n, p, q, r, m) = instantiate_GA(2, 0, 0);  # plane spherical geometry 
