@@ -4,7 +4,7 @@
 #   Python/SymPy/GAlgebra program source code for numerical frame transformation 
 # and versor decomposition into fixed-axis (Givens') rotations, with demo & test 
 # harness, for real Clifford algebra  Cl(p,q,r) . 
-# Version 2.0; date: 20/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 2.1; date: 22/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 # In command window execute: 
 #   python -i /Users/fred/Desktop/frames_givens_demo/frames_givens_demo.py 
 
@@ -139,9 +139,8 @@ def givens_factor_matrix (B, verb = False) :
   err = 0;  # roundoff error 
   for i in range(0, n) : 
     for j in range(0, n) : 
-      #err = err + (B[i, j] - C[i, j])**2;  # unevaluated ?? 
-      err = err - (B[i, j] - C[i, j])*(C[i, j] - B[i, j]); # end for end for 
-  err = sqrt(err/n); 
+      err = err + (B[i, j] - C[i, j])**2; # end for end for 
+  err = sqrt(err/n);  # unevaluated? 
   if err > eps : print "givens_factor_matrix: error = ", err; print; # end if 
   
   if verb : print "B, R[1] ... R[m]"; print B; print; print C; print; print "err", err; print; # end if 
@@ -300,12 +299,12 @@ def spin_disc (l = 20) :
   
   return "DONE"; # end def 
 
-# (GA, n, p, q, r, m) = instantiate_GA(2, 2, 2);  # mixed degenerate algebra 
-# print test_main();  # verbose tests 
 (GA, n, p, q, r, m) = instantiate_GA(4, 0, 0);  # 3-sphere geometry 
 print test_main();  # verbose tests 
 (GA, n, p, q, r, m) = instantiate_GA(2, 0, 0);  # plane spherical geometry 
 print spin_disc(); # spin demo 
+(GA, n, p, q, r, m) = instantiate_GA(2, 2, 2);  # mixed degenerate algebra 
+print test_main();  # verbose tests 
 
 ################################################################################
 
