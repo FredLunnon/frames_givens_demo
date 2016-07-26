@@ -1,12 +1,12 @@
 
 ################################################################################
 
-#   Python/SymPy/GAlgebra program source code for numerical frame transformation 
+#   Python/SymPy/GAlgebra program source for numerical frame transformation 
 # and versor decomposition into fixed-axis (Givens') rotations, with demo & test 
 # harness, for real Clifford algebra  Cl(p,q,r) . 
-# Version 2.1; date: 22/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 2.2; date: 24/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 # In command window execute: 
-#   python -i /Users/fred/Desktop/frames_givens_demo/frames_givens_demo.py 
+#   python -i /Users/fred/fred/euclidean/frames_givens_demo/frames_givens_demo.py 
 
 from sympy import *; 
 from ga import *; 
@@ -54,9 +54,9 @@ def frame_transform_versor (F, G, verb = False, Z0 = 0) :
       print k+1, s, m1, m2; print; print Rk; print; print Hk; print; # end if end for 
   # finally  H = (1/Z) F Z ~ +/-G , Z = prod_k R ; 
   
-  # fix frame signs if possible ( p  even,  r  zero;  p  odd,  r  nonzero) 
-  if t < 0 :  # (fails to detect mismatched isotropic  --- FIX ?? ) 
-    for j in range(0, p+q) : Z = Z*gene[j]; # end for end if 
+  # fix frame signs if possible ( p  even,  r  zero;  p  odd,  r  nonzero);  
+  #   misses mismatched isotropic generators! 				 --- FIX ?? 
+  if t < 0 : Z = Z*GA_J;  # end if 
   
   if Z0 <> 0 :  # ensure  sign(Z)  continuous 
     Z_Z = Z0*rev(Z);  # (old Z)/(new Z) ~ disc  (monomial) 
@@ -71,7 +71,7 @@ def frame_transform_versor (F, G, verb = False, Z0 = 0) :
   H = [ grade(rev(Z)*F[k]*Z, 1) for k in range(0, n) ]; 
   for k in range(0, n) : 
     err = err + abs(mag2(G[k] - H[k])); # end for 
-  err = sqrt(err/n); 
+  err = sqrt(err/n).evalf(); 
   if err > eps : 
     print "frame_transform_versor: error = ", err; print; # end if 
     
@@ -140,7 +140,7 @@ def givens_factor_matrix (B, verb = False) :
   for i in range(0, n) : 
     for j in range(0, n) : 
       err = err + (B[i, j] - C[i, j])**2; # end for end for 
-  err = sqrt(err/n);  # unevaluated? 
+  err = sqrt(err/n).evalf();  # unevaluated? 
   if err > eps : print "givens_factor_matrix: error = ", err; print; # end if 
   
   if verb : print "B, R[1] ... R[m]"; print B; print; print C; print; print "err", err; print; # end if 
@@ -161,7 +161,7 @@ def givens_factor_versor (Y, verb = False) :
   for k in range(0, m) : 
     Z = Z*Rmul[k]; # end for 
   sig = grade(Z, 0); Rmul[m-1] = sig*Rmul[m-1];  # adjust spin 
-  err = sqrt(abs(mag2(Z - sig))/2); 
+  err = sqrt(abs(mag2(Z - sig))/2).evalf(); 
   if err > eps : print "givens_factor_versor: error = ", err; print; # end if 
   
   if verb : 
@@ -200,44 +200,33 @@ def rand_ortho (l) :
   return versor_to_matrix(rand_versor(l)); # end def 
 
 # Instantiate general Clifford algebra: call at top level; no default identifiers? 
-# Case  r > 0  unsupported, replaced by  e^2 ~ 0 ; require dual via adjoint reversal! 
-gene = []; sigs = [];  # global generators and signatures 
-n = 0; m = 0;  # vector & bivector dimension: read-only! 
-def instantiate_GA (p0, q0, r0) :  # local n, m, p, q, r, g; global gene, sigs, eps; 
-  p = p0; q = q0; r = r0; 
-  n = p+q+r; m = n*(n-1)/2;  # cannot assign global  n,m,p,q,r etc? 
-  while len(gene) > 0 : gene.pop(); sigs.pop();  # delete old generators 
-#  g = [1 for i in range(0, p)] + [-1 for i in range(0, q)] + [0 for i in range(0, r)]; 
-  g = [1 for i in range(0, p)] + [-1 for i in range(0, q)] + [eps**4 for i in range(0, r)]; 
+def instantiate_GA (sigs0) :  # local j; 
+  global GA, GA_J, gene, sigs, eps, n, m; 
+  sigs = sigs0; 
+  n = len(sigs0); m = n*(n-1)/2; 
   
   if n == 2 : 
-    GA = Ga('e1 e2', g = g); 
-    (e1, e2) = GA.mv(); 
-    gene.append(e1); gene.append(e2); 
-    sigs.append(g[0]); sigs.append(g[1]); 
+    GA = Ga('e1 e2', g = sigs); 
+    (e1, e2) = GA.mv(); gene = [e1, e2]; 
   elif n == 3 : 
-    GA = Ga('e1 e2 e3', g = g); 
-    (e1, e2, e3) = GA.mv(); 
-    gene.append(e1); gene.append(e2); gene.append(e3); 
-    sigs.append(g[0]); sigs.append(g[1]); sigs.append(g[2]); 
+    GA = Ga('e1 e2 e3', g = sigs); 
+    (e1, e2, e3) = GA.mv(); gene = [e1, e2, e3]; 
   elif n == 4 : 
-    GA = Ga('e1 e2 e3 e4', g = g); 
-    (e1, e2, e3, e4) = GA.mv(); 
-    gene.append(e1); gene.append(e2); gene.append(e3); gene.append(e4); 
-    sigs.append(g[0]); sigs.append(g[1]); sigs.append(g[2]); sigs.append(g[3]); 
+    GA = Ga('e1 e2 e3 e4', g = sigs); 
+    (e1, e2, e3, e4) = GA.mv(); gene = [e1, e2, e3, e4]; 
   elif n == 5 : 
-    GA = Ga('e1 e2 e3 e4 e5', g = g); 
-    (e1, e2, e3, e4, e5) = GA.mv(); 
-    gene.append(e1); gene.append(e2); gene.append(e3); gene.append(e4); gene.append(e5); 
-    sigs.append(g[0]); sigs.append(g[1]); sigs.append(g[2]); sigs.append(g[3]); sigs.append(g[4]); 
+    GA = Ga('e1 e2 e3 e4 e5', g = sigs); 
+    (e1, e2, e3, e4, e5) = GA.mv(); gene = [e1, e2, e3, e4, e5]; 
   elif n == 6 : 
-    GA = Ga('e1 e2 e3 e4 e5 e6', g = g); 
-    (e1, e2, e3, e4, e5, e6) = GA.mv(); 
-    gene.append(e1); gene.append(e2); gene.append(e3); gene.append(e4); gene.append(e5); gene.append(e6); 
-    sigs.append(g[0]); sigs.append(g[1]); sigs.append(g[2]); sigs.append(g[3]); sigs.append(g[4]); sigs.append(g[5]); 
+    GA = Ga('e1 e2 e3 e4 e5 e6', g = sigs); 
+    (e1, e2, e3, e4, e5, e6) = GA.mv(); gene = [e1, e2, e3, e4, e5, e6]; 
   else : 
     print; print "You're on your own, sunshine!  n = ", n; print; # end if 
-  return (GA, n, p, q, r, m); # end def 
+  
+  GA_J = 1;  # quasi-pseudar ?? 
+  for j in range(0, n) : 
+    if sigs[j] <> 0 : GA_J = GA_J*gene[j]; # end if end for 
+  return None; # end def 
 
 # Verbose test suite 
 def test_main () : 
@@ -299,22 +288,24 @@ def spin_disc (l = 20) :
   
   return "DONE"; # end def 
 
-(GA, n, p, q, r, m) = instantiate_GA(4, 0, 0);  # 3-sphere geometry 
+# Time 02:21 
+instantiate_GA([1,1,1,1]);  # 3-sphere geometry  Cl(4) 
 print test_main();  # verbose tests 
-(GA, n, p, q, r, m) = instantiate_GA(2, 0, 0);  # plane spherical geometry 
+instantiate_GA([1,1]);  # circle geometry  Cl(2) 
 print spin_disc(); # spin demo 
-(GA, n, p, q, r, m) = instantiate_GA(2, 2, 2);  # mixed degenerate algebra 
+instantiate_GA([1,1,-1,-1,0,0]);  # mixed degenerate  Cl(2,2,2) 
 print test_main();  # verbose tests 
 
 ################################################################################
 
 # TODO --- 
 # Wrap non-static properties: matrix.T , .row, list.append; unit matrix, etc ?? 
-# Maybe remove sequential signature restriction:  p+q  occurs in  2  functions? 
 # spin_disc() : demo dual continuity ?? 
 # test_main () : tidy identifiers ?? 
 # rand_versor() : fix sign quibble? 
 # frame_transform_versor() : 
-#   (fails to detect mismatched isotropic  --- FIX ?? ) 
-# givens_factor_matrix()  query: test translation in 1-space CGA = GA(2, 1) ? 
+#   misses mismatched isotropic generators! 
+# givens_factor_matrix() : 
+#   query: test translation in 1-space CGA = GA(2, 1) ? 
+#   Cl(2,2,2) second call --- error =  0.816496580927725 ?? 
 

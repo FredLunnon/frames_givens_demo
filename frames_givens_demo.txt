@@ -1,10 +1,10 @@
 
 ################################################################################
 
-#   Python/SymPy/GAlgebra program source code for numerical frame transformation 
+#   Python/SymPy/GAlgebra program source for numerical frame transformation 
 # and versor decomposition into fixed-axis (Givens') rotations, with demo & test 
 # harness, for real Clifford algebra  Cl(p,q,r) . 
-# Version 2.0; date: 20/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 2.2; date: 24/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 
   Assistance from Alan Cortzen and Warren D. Smith concerning the algorithms 
 for frame conversion and Givens factorisation is hereby acknowledged. 
@@ -71,9 +71,6 @@ contain examples of usage of the principal functions.
 default assumes double-length real precision (64-bit floating-point). 
 Norms and components smaller than this quantity are interpreted as zero; 
 "equality" between numerical  b, c  is implemented as  |b - c| < eps . 
-
-  Since GAlgebra does not support degenerate ( r > 0 ) algebras, isotropic 
-generators are implemented by defining  (e_i)^2 = eps^4  instead. 
 
 
   Function:  versor_to_matrix (X), matrix_to_versor (A, Z0 = 0) 
@@ -219,15 +216,15 @@ versor_to_matrix().  No effort is made to randomise the sign when  l, n
 are both odd. 
     
 
-  Function:  instantiate_GA (n)  
+  Function:  instantiate_GA (p, q, r)  
 
-  Input:  dimension  n  of algebra. 
+  Input:  numbers  p, q, r  of generators squaring to  +1, -1, 0  resp. 
 
-  Output:  GA, n, m  for assignment to global variables. 
+  Output:  Assigns to global variables GA, n, m, p, q, r, gene[], sigs[] . 
 
   Caveat:  Must be invoked at outer level of user program.  User generator 
-identifiers must assigned explicitly, their variables recovered from global  
-gene[]  list --- see  spin_disc()  source for example. 
+identifiers must assigned explicitly: their variables can be recovered from 
+global list  gene[] , see  spin_disc()  source for example. 
 
 
   Function:  test_main () 
