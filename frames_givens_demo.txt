@@ -4,7 +4,7 @@
 #   Python/SymPy/GAlgebra program source for numerical frame transformation 
 # and versor decomposition into fixed-axis (Givens') rotations, with demo & test 
 # harness, for real Clifford algebra  Cl(p,q,r) . 
-# Version 2.2; date: 24/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 2.3; date: 28/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 
   Assistance from Alan Cortzen and Warren D. Smith concerning the algorithms 
 for frame conversion and Givens factorisation is hereby acknowledged. 
@@ -216,15 +216,13 @@ versor_to_matrix().  No effort is made to randomise the sign when  l, n
 are both odd. 
     
 
-  Function:  instantiate_GA (p, q, r)  
+  Function:  instantiate_GA (siglis)  
 
-  Input:  numbers  p, q, r  of generators squaring to  +1, -1, 0  resp. 
+  Input:  list comprising  +1,-1,0's  specifying squares of generators. 
 
-  Output:  Assigns to global variables GA, n, m, p, q, r, gene[], sigs[] . 
-
-  Caveat:  Must be invoked at outer level of user program.  User generator 
-identifiers must assigned explicitly: their variables can be recovered from 
-global list  gene[] , see  spin_disc()  source for example. 
+  Output:  Assigns to global variables GA, n, m, gene[], sigs[] ; 
+assigns default identifiers  e1, e2, ...  to generators. 
+Generator variables and signatures are cached in  gene[], sigs[]  resp.  
 
 
   Function:  test_main () 

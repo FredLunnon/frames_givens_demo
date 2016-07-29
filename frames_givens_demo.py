@@ -4,7 +4,7 @@
 #   Python/SymPy/GAlgebra program source for numerical frame transformation 
 # and versor decomposition into fixed-axis (Givens') rotations, with demo & test 
 # harness, for real Clifford algebra  Cl(p,q,r) . 
-# Version 2.2; date: 24/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
+# Version 2.3; date: 28/07/16; author: Fred Lunnon <Fred.Lunnon@gmail.com> 
 # In command window execute: 
 #   python -i /Users/fred/fred/euclidean/frames_givens_demo/frames_givens_demo.py 
 
@@ -15,6 +15,7 @@ import random;  # from random import *;  # fails?
 from mv import *;  # static GA wrappers 
 
 eps = 1.0e-12;  # rounding error bound (double-length floating-point) 
+FGD_version = 2.3;  # update !! 
 
 # Normalise versor (magnitude assumed positive) : 
 #   version below fails to negotiate fl pt error? 
@@ -199,9 +200,10 @@ def rand_versor (l) :
 def rand_ortho (l) : 
   return versor_to_matrix(rand_versor(l)); # end def 
 
-# Instantiate general Clifford algebra: call at top level; no default identifiers? 
+# Instantiate Clifford algebra, given signature list comprising  +1,-1,0's 
 def instantiate_GA (sigs0) :  # local j; 
   global GA, GA_J, gene, sigs, eps, n, m; 
+  global e1, e2, e3, e4, e5, e6;  # export default identifiers 
   sigs = sigs0; 
   n = len(sigs0); m = n*(n-1)/2; 
   
@@ -223,7 +225,7 @@ def instantiate_GA (sigs0) :  # local j;
   else : 
     print; print "You're on your own, sunshine!  n = ", n; print; # end if 
   
-  GA_J = 1;  # quasi-pseudar ?? 
+  GA_J = 1;  # quasi-pseudar 
   for j in range(0, n) : 
     if sigs[j] <> 0 : GA_J = GA_J*gene[j]; # end if end for 
   return None; # end def 
@@ -289,6 +291,7 @@ def spin_disc (l = 20) :
   return "DONE"; # end def 
 
 # Time 02:21 
+print; print "Python/SymPy/GAlgebra frames_givens_demo version", FGD_version; 
 instantiate_GA([1,1,1,1]);  # 3-sphere geometry  Cl(4) 
 print test_main();  # verbose tests 
 instantiate_GA([1,1]);  # circle geometry  Cl(2) 
@@ -308,4 +311,4 @@ print test_main();  # verbose tests
 # givens_factor_matrix() : 
 #   query: test translation in 1-space CGA = GA(2, 1) ? 
 #   Cl(2,2,2) second call --- error =  0.816496580927725 ?? 
-
+# Version 3 : arithmetic wrappers throughout; latter GA_multor, GAlgebra, Clifford ... 
